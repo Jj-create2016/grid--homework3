@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>校园绿色电力小脑 · AI智能调度系统</title>
+
+<script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+<script>
+  if (window.eruda) {
+    eruda.init({
+      tool: ['console', 'network', 'resources', 'info'],
+      useShadowDom: true, autoScale: true,
+      defaults: { displaySize: 85, transparency: 0.95, theme: 'Dark' }
+    });
+    eruda.hide();
+  }
+</script>
+
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --panel: rgba(255,255,255,0.04);
+    --border: rgba(100,255,218,0.16);
+    --text: #ccd6f6;
+    --dim: #7a8fa8;
+    --cyan: #64ffda;
+    --green: #4ade80;
+    --yellow: #fbbf24;
+    --red: #f87171;
+    --purple: #a78bfa;
+  }
+
+  body {
+    font-family: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+    background: radial-gradient(circle at 15% 0%, #0d2137 0%, #050d1a 55%);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 10px;
+  }
+
+  .app { max-width: 1400px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+
+  /* ============ 顶部状态栏 ============ */
+  .app-header {
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 10px; padding: 12px 16px;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .logo { font-size: 22px; }
+  .brand h1 {
+    font-size: 17px;
+    background: linear-gradient(90deg, #4ade80, #22d3ee);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  .brand p { font-size: 11px; color: var(--dim); margin-top: 2px; }
+  .header-right { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .sys-status { display: flex; align-items: center; gap: 10px; font-size: 11px; color: var(--dim); font-variant-numeric: tabular-nums; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 10px var(--green); animation: pulse 1.6s infinite; }
+  .sys-status .val { color: var(--cyan); font-weight: 700; }
+  .sys-status .sep { width: 1px; height: 12px; background: rgba(255,255,255,0.12); }
+  @keyframes pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .45; transform: scale(1.25); } }
+
+  .btn-debug {
+    padding: 8px 16px; font-size: 12px; font-weight: 700;
+    font-family: inherit; color: #fff;
+    background: linear-gradient(135deg, #a78bfa, #7c3aed);
+    border: none; border-radius: 8px; cursor: pointer;
+    display: flex; align-items: center; gap: 8px;
+    box-shadow: 0 0 18px rgba(167,139,250,0.4);
+    transition: all .2s;
+  }
+  .btn-debug::before {
+    content: ''; width: 6px; height: 6px; border-radius: 50%;
+    background: #22c55e; box-shadow: 0 0 8px #22c55e;
+    animation: pulse 1.6s infinite;
+  }
+
+  /* ============ 通用面板 ============ */
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
+
+  /* ============ 拓扑图 ============ */
+  .map-panel { display: flex; flex-direction: column; }
+  .map-header {
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 8px; margin-bottom: 12px;
+  }
+  .map-header h2 {
+    font-size: 13px; color: #b0c4de; font-weight: 600;
+    border-left: 3px solid var(--cyan); padding-left: 8px;
+  }
+  .map-actions { display: flex; gap: 6px; }
+  .map-actions button {
+    padding: 7px 16px; font-size: 12px; font-weight: 600;
+    border: none; border-radius: 6px; cursor: pointer;
+    font-family: inherit; transition: all .2s;
+  }
+  .map-actions .btn-run { background: linear-gradient(135deg, #22c55e, #06b6d4); color: #fff; }
+  .map-actions .btn-run:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(34,197,94,.3); }
+  .map-actions .btn-reset { background: rgba(255,255,255,0.08); color: #b0c4de; }
+  .map-actions button:disabled { opacity: .45; cursor: not-allowed; }
+
+  /* ============ 拓扑 wrapper ============ */
+  .topo-wrapper {
+    position: relative;
+    background: rgba(0,0,0,0.3);
+    border-radius: 10px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow: hidden;
+  }
+
+  #gridCanvas {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    z-index: 0; pointer-events: none;
+    border-radius: 10px;
+  }
+
+  .topo-content {
+    position: relative; z-index: 1;
+    display: flex; flex-direction: column;
+    gap: 12px;
+  }
+
+  /* ============ 顶部横条 ============ */
+  .topo-bars { display: flex; gap: 2px; height: 88px; }
+  .top-bar {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    border-radius: 10px; color: #050d1a; font-weight: 700;
+    overflow: hidden; padding: 4px;
+    transition: flex-basis 0.5s ease;
+    min-width: 0;
+  }
+  .top-bar .bar-title { font-size: 12px; line-height: 1.2; }
+  .top-bar .bar-pct { font-size: 22px; line-height: 1.1; font-weight: 800; margin: 1px 0; }
+  .top-bar .bar-kwh { font-size: 11px; opacity: 0.78; font-weight: 600; }
+  .bar-solar { background: linear-gradient(90deg, #22d3ee, #64ffda); box-shadow: 0 0 22px rgba(34,211,238,0.5); }
+  .bar-storage { background: linear-gradient(90deg, #fbbf24, #f59e0b); box-shadow: 0 0 22px rgba(251,191,36,0.5); }
+
+  /* ============ 中间横向滚动卡片 ============ */
+  .topo-card-scroll {
+    flex: 0 0 auto;
+    height: 300px;
+    background: rgba(30, 41, 59, 0.94);
+    border: 2px solid rgba(167, 139, 250, 0.55);
+    border-radius: 14px;
+    padding: 12px;
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    box-shadow: 0 0 30px rgba(167, 139, 250, 0.25);
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: #a78bfa rgba(0,0,0,0.2);
+  }
+  .topo-card-scroll::-webkit-scrollbar { height: 7px; }
+  .topo-card-scroll::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 3px; }
+  .topo-card-scroll::-webkit-scrollbar-thumb { background: #a78bfa; border-radius: 3px; }
+
+  /* 内部小卡片 */
+  .mini-card {
+    flex: 0 0 auto;
+    height: 100%;
+    background: rgba(0,0,0,0.28);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+  }
+  .mini-card .mc-title {
+    font-size: 12px;
+    color: #a78bfa;
+    font-weight: 700;
+    white-space: nowrap;
+    border-bottom: 1px solid rgba(167,139,250,0.2);
+    padding-bottom: 5px;
+    margin-bottom: 2px;
+    display: flex; align-items: center; gap: 4px;
+  }
+
+  /* ============ 合并卡：参数 + 调度结果 ============ */
+  .card-combined { width: 620px; }
+
+  .card-combined .section-label {
+    font-size: 10.5px;
+    color: #8aa0b8;
+    font-weight: 600;
+    letter-spacing: 0.4px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 3px;
+  }
+  .card-combined .section-label::before {
+    content: '';
+    width: 3px; height: 10px;
+    background: #a78bfa;
+    border-radius: 1px;
+  }
+
+  /* 参数区 */
+  .params-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px 8px;
+  }
+  .params-grid .f { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .params-grid .f label {
+    font-size: 10px; color: #7a8fa8;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    line-height: 1.1;
+  }
+  .params-grid .f input {
+    width: 100%; padding: 5px 6px;
+    font-size: 12.5px;
+    background: rgba(0,0,0,0.42);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 4px;
+    color: #ccd6f6;
+    font-family: inherit;
+    font-variant-numeric: tabular-nums;
+    min-width: 0; line-height: 1.2;
+  }
+  .params-grid .f input:focus {
+    outline: none; border-color: #4ade80;
+    box-shadow: 0 0 0 1px rgba(74,222,128,0.2);
+  }
+
+  /* 分隔线 */
+  .section-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(167,139,250,0.35), transparent);
+    margin: 6px 0 4px;
+  }
+
+  /* 统计区 */
+  .stats-mini-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+    flex: 1;
+  }
+  .stats-mini-grid .s-item {
+    background: rgba(0,0,0,0.3);
+    border-radius: 6px;
+    padding: 10px 4px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    color: var(--dim);
+  }
+  .stats-mini-grid .s-item::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0;
+    height: 2.5px; background: currentColor;
+  }
+  .stats-mini-grid .s-item .label {
+    font-size: 10px; color: #7a8fa8;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .stats-mini-grid .s-item .value {
+    font-size: 15px; font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    color: inherit;
+  }
+  .stats-mini-grid .s-item .value .unit {
+    font-size: 9.5px; color: #7a8fa8; margin-left: 1px; font-weight: 400;
+  }
+  .stats-mini-grid .s-item.solar   { color: var(--yellow); }
+  .stats-mini-grid .s-item.demand  { color: var(--cyan); }
+  .stats-mini-grid .s-item.util    { color: var(--green); }
+  .stats-mini-grid .s-item.save    { color: var(--purple); }
+  .stats-mini-grid .s-item.carbon  { color: var(--green); }
+
+  /* ============ 结果卡（节省电费大字） ============ */
+  .card-result-mini { width: 220px; align-items: center; justify-content: center; }
+  .card-result-mini .res-label {
+    font-size: 13px; color: #7a8fa8; text-align: center;
+  }
+  .card-result-mini .res-value {
+    font-size: 46px; font-weight: 800;
+    color: #a78bfa;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    text-align: center;
+    margin: 12px 0;
+  }
+  .card-result-mini .res-value i {
+    font-size: 18px; color: #7a8fa8;
+    font-style: normal; font-weight: 400; margin-left: 2px;
+  }
+  .card-result-mini .res-side {
+    font-size: 13px; color: #4ade80;
+    text-align: center;
+    white-space: nowrap;
+  }
+  .card-result-mini .res-side.warn { color: var(--yellow); }
+
+  /* ============ 曲线卡 ============ */
+  .card-chart-mini { width: 620px; }
+  .card-chart-mini .mc-title {
+    justify-content: space-between;
+    flex-wrap: nowrap;
+    gap: 10px;
+  }
+  .chart-legend-inline {
+    display: flex;
+    gap: 12px;
+    font-size: 10px;
+    font-weight: 500;
+    color: #7a8fa8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    justify-content: flex-end;
+  }
+  .chart-legend-inline span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .chart-legend-inline i {
+    width: 12px; height: 3px;
+    border-radius: 1.5px;
+    display: inline-block;
+  }
+  .card-chart-mini .chart-holder {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+    background: rgba(0,0,0,0.2);
+    border-radius: 5px;
+    padding: 4px;
+  }
+  #chart {
+    flex: 1; width: 100%; height: 100%; display: block;
+  }
+
+  /* ============ 底部校园用电 ============ */
+  .topo-user {
+    height: 78px;
+    background: linear-gradient(90deg, #4ade80, #22c55e);
+    border-radius: 12px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    color: #050d1a; font-weight: 700;
+    box-shadow: 0 0 26px rgba(74, 222, 128, 0.45);
+    padding: 4px;
+  }
+  .topo-user .user-title { font-size: 20px; line-height: 1.2; }
+  .topo-user .user-value {
+    font-size: 13px; font-weight: 600;
+    opacity: 0.78; margin-top: 2px;
+  }
+
+  /* ============ 目标条 ============ */
+  .target-bar {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 14px;
+  }
+  .target-bar .icon { font-size: 20px; }
+  .target-bar .title { font-size: 11px; color: var(--dim); margin-bottom: 2px; }
+  .target-bar .result { font-size: 12.5px; font-weight: 700; }
+  .progress-wrap { flex: 1; min-width: 100px; }
+  .progress-bg { height: 7px; background: rgba(0,0,0,0.35); border-radius: 4px; overflow: hidden; }
+  .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #22c55e, #22d3ee); border-radius: 4px; transition: width .6s ease; }
+  .progress-text { font-size: 10px; color: var(--dim); margin-top: 2px; text-align: right; }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <header class="app-header">
+    <div class="brand">
+      <span class="logo">⚡</span>
+      <div>
+        <h1>校园绿色电力小脑</h1>
+        <p>AI智能调度 · 电网运行监控系统</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="sys-status">
+        <span class="status-dot"></span>
+        <span>系统在线</span>
+        <span class="sep"></span>
+        <span>电压 <b class="val" id="hdrVoltage">220.5</b> kV</span>
+        <span>频率 <b class="val" id="hdrFreq">50.02</b> Hz</span>
+        <span>负载 <b class="val" id="hdrLoad">76.8</b> %</span>
+      </div>
+      <button class="btn-debug" id="btnDebug">🖥️ 调试器 / 日志</button>
+    </div>
+  </header>
+
+  <section class="panel map-panel">
+    <div class="map-header">
+      <h2>⚡ 能源汇聚拓扑 · 光伏 / 储能 → AI 调度 → 校园用电</h2>
+      <div class="map-actions">
+        <button class="btn-run" id="btnRun">▶ AI智能调度</button>
+        <button class="btn-reset" id="btnReset">↺ 重置</button>
+      </div>
+    </div>
+
+    <div class="topo-wrapper">
+      <canvas id="gridCanvas"></canvas>
+
+      <div class="topo-content">
+        <!-- 顶部横条 -->
+        <div class="topo-bars">
+          <div class="top-bar bar-solar" id="barSolar" style="flex: 0 0 80%;">
+            <div class="bar-title">☀️ 光伏</div>
+            <div class="bar-pct" id="solarPct">80%</div>
+            <div class="bar-kwh" id="solarKwh">163 kWh</div>
+          </div>
+          <div class="top-bar bar-storage" id="barStorage" style="flex: 0 0 20%;">
+            <div class="bar-title">🔋 储能</div>
+            <div class="bar-pct" id="storagePct">20%</div>
+            <div class="bar-kwh" id="storageKwh">40 kWh</div>
+          </div>
+        </div>
+
+        <!-- 中间横向滚动卡片 -->
+        <div class="topo-card-scroll">
+
+          <!-- 🌟 合并卡：参数 + 调度结果 -->
+          <div class="mini-card card-combined">
+            <div class="mc-title">⚙️ 参数设置 & 📊 调度结果</div>
+
+            <!-- 参数区 -->
+            <div class="section-label">参数输入</div>
+            <div class="params-grid">
+              <div class="f"><label>☀️ 光伏</label><input type="number" id="inSolarCap" value="25" min="1" max="200"></div>
+              <div class="f"><label>🔋 储能</label><input type="number" id="inStorageCap" value="40" min="5" max="500"></div>
+              <div class="f"><label>🏫 系数</label><input type="number" id="inDemandScale" value="1.0" min="0.3" max="3" step="0.1"></div>
+              <div class="f"><label>⚡ 峰</label><input type="number" id="inPricePeak" value="1.2" min="0.1" max="3" step="0.1"></div>
+              <div class="f"><label>⚡ 平</label><input type="number" id="inPriceFlat" value="0.8" min="0.1" max="3" step="0.1"></div>
+              <div class="f"><label>⚡ 谷</label><input type="number" id="inPriceValley" value="0.4" min="0.1" max="3" step="0.1"></div>
+              <div class="f"><label>🎯 目标</label><input type="number" id="inTargetSave" value="80" min="0" step="5"></div>
+              <div class="f"><label>🤖 激进</label><input type="number" id="inAggressive" value="1.0" min="0.5" max="2" step="0.1"></div>
+            </div>
+
+            <!-- 分隔线 -->
+            <div class="section-divider"></div>
+
+            <!-- 统计区 -->
+            <div class="section-label">调度输出</div>
+            <div class="stats-mini-grid">
+              <div class="s-item solar">
+                <div class="label">☀️ 光伏</div>
+                <div class="value" id="statSolar">--<span class="unit">kWh</span></div>
+              </div>
+              <div class="s-item demand">
+                <div class="label">🏫 用电</div>
+                <div class="value" id="statDemand">--<span class="unit">kWh</span></div>
+              </div>
+              <div class="s-item util">
+                <div class="label">🔋 利用率</div>
+                <div class="value" id="statUtil">--<span class="unit">%</span></div>
+              </div>
+              <div class="s-item save">
+                <div class="label">💰 节省</div>
+                <div class="value" id="statSave">--<span class="unit">元</span></div>
+              </div>
+              <div class="s-item carbon">
+                <div class="label">🌱 减碳</div>
+                <div class="value" id="statCarbon">--<span class="unit">kg</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 结果卡 -->
+          <div class="mini-card card-result-mini">
+            <div class="res-label">💰 节省电费</div>
+            <div class="res-value" id="resSave">--<i>元</i></div>
+            <div class="res-side" id="resSide">待调度</div>
+          </div>
+
+          <!-- 曲线卡 -->
+          <div class="mini-card card-chart-mini">
+            <div class="mc-title">
+              <span>📈 24小时曲线</span>
+              <span class="chart-legend-inline">
+                <span><i style="background:#fbbf24"></i>光伏(kW)</span>
+                <span><i style="background:#22d3ee"></i>用电(kW)</span>
+                <span><i style="background:#4ade80"></i>储能(kWh)</span>
+                <span><i style="background:#f87171"></i>购电(kW)</span>
+              </span>
+            </div>
+            <div class="chart-holder">
+              <canvas id="chart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- 底部校园用电 -->
+        <div class="topo-user">
+          <div class="user-title">🏫 校园用电</div>
+          <div class="user-value" id="userValue">待运行 · 点击「AI智能调度」启动</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="target-bar" id="targetBar" style="display:none;">
+    <div class="icon" id="targetIcon">🎯</div>
+    <div class="info">
+      <div class="title">期望节省电费目标</div>
+      <div class="result" id="targetResult">--</div>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-bg"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-text" id="progressText">0%</div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+/* ----------------------------------------------------------------
+   一、Eruda
+   ---------------------------------------------------------------- */
+$('btnDebug').addEventListener('click', () => {
+  if (window.eruda) {
+    eruda.show();
+    try { eruda.get('console').show(); } catch (e) {}
+    console.log('%c[调试器] 已打开', 'color:#a78bfa;font-weight:bold');
+  }
+});
+
+function logAI(msg, type = 'log') {
+  if (!window.eruda) return;
+  const styles = {
+    log:     'color:#8aa0b8;',
+    ai:      'color:#4ade80;',
+    plan:    'color:#a78bfa;',
+    warn:    'color:#fbbf24;',
+    error:   'color:#f87171;font-weight:bold;',
+    summary: 'color:#a78bfa;font-weight:bold;',
+    success: 'color:#4ade80;font-weight:bold;',
+    info:    'color:#8b98a8;',
+    service: 'color:#64ffda;'
+  };
+  console.log('%c' + msg, styles[type] || styles.log);
+}
+
+function logToEruda(msg, level = 'log') {
+  if (!window.eruda) return;
+  if (level === 'error') console.error(msg);
+  else if (level === 'warn') console.warn(msg);
+  else console.log(msg);
+}
+
+/* ----------------------------------------------------------------
+   二、实时状态
+   ---------------------------------------------------------------- */
+let systemState = { voltage: 220.5, frequency: 50.02, load: 76.8 };
+
+function tickSystemState() {
+  systemState.voltage   = (220 + Math.random()).toFixed(1);
+  systemState.frequency = (50 + (Math.random() - 0.5) * 0.2).toFixed(2);
+  let load = parseFloat(systemState.load) + (Math.random() - 0.5) * 2.4;
+  if (load < 30) load = 30; if (load > 99) load = 99;
+  systemState.load = load.toFixed(1);
+  $('hdrVoltage').textContent = systemState.voltage;
+  $('hdrFreq').textContent    = systemState.frequency;
+  $('hdrLoad').textContent    = systemState.load;
+}
+setInterval(tickSystemState, 2000);
+tickSystemState();
+
+/* ----------------------------------------------------------------
+   三、参数 / 曲线函数
+   ---------------------------------------------------------------- */
+function getConfig() {
+  return {
+    solarCap:    parseFloat($('inSolarCap').value)    || 25,
+    storageCap:  parseFloat($('inStorageCap').value)  || 40,
+    demandScale: parseFloat($('inDemandScale').value) || 1.0,
+    pricePeak:   parseFloat($('inPricePeak').value)   || 1.2,
+    priceFlat:   parseFloat($('inPriceFlat').value)   || 0.8,
+    priceValley: parseFloat($('inPriceValley').value) || 0.4,
+    targetSave:  parseFloat($('inTargetSave').value)  || 80,
+    aggressive:  parseFloat($('inAggressive').value)  || 1.0
+  };
+}
+
+function priceAt(h, cfg) {
+  if (h >= 18 && h <= 21) return cfg.pricePeak;
+  if (h >= 7  && h <= 17) return cfg.priceFlat;
+  return cfg.priceValley;
+}
+
+function solarAt(h, cfg) {
+  if (h < 6 || h > 18) return 0;
+  const x = (h - 12) / 5;
+  return Math.max(0, cfg.solarCap * Math.exp(-1.8 * x * x));
+}
+
+function demandAt(h, cfg) {
+  let base;
+  if (h >= 0 && h <= 5)        base = 3;
+  else if (h >= 7 && h <= 8)   base = 14;
+  else if (h >= 11 && h <= 13) base = 18;
+  else if (h >= 15 && h <= 16) base = 12;
+  else if (h >= 18 && h <= 21) base = 20;
+  else                          base = 6;
+  return base * cfg.demandScale;
+}
+
+/* ----------------------------------------------------------------
+   四、AI 调度
+   ---------------------------------------------------------------- */
+function aiDispatch(cfg) {
+  const baseCharge    = cfg.storageCap * 0.20;
+  const baseDischarge = cfg.storageCap * 0.20;
+  const minReserve    = cfg.storageCap * 0.10;
+
+  let result = tryDispatch(cfg, baseCharge, baseDischarge, minReserve, cfg.aggressive);
+  let attempt = 0;
+  while (result.save < cfg.targetSave && attempt < 5) {
+    attempt++;
+    const boost = 1 + attempt * 0.3;
+    result = tryDispatch(cfg, baseCharge * boost, baseDischarge * boost, minReserve, cfg.aggressive * boost);
+  }
+  result.attempts = attempt;
+  return result;
+}
+
+function tryDispatch(cfg, maxCharge, maxDischarge, minReserve, aggressive) {
+  const solar = [], demand = [], storage = [], gridBuy = [], storageFlow = [], logs = [];
+  let soc = cfg.storageCap * 0.5;
+  const chargeRate    = Math.min(maxCharge,    cfg.storageCap * 0.25);
+  const dischargeRate = Math.min(maxDischarge, cfg.storageCap * 0.25);
+
+  for (let h = 0; h < 24; h++) {
+    const pv    = solarAt(h, cfg);
+    const dem   = demandAt(h, cfg);
+    const price = priceAt(h, cfg);
+    const net   = dem - pv;
+    let charge = 0, discharge = 0, buy = 0;
+    const isValley = (h >= 22 || h <= 6);
+
+    if (net > 0) {
+      if (isValley) {
+        const room = cfg.storageCap - soc;
+        charge = Math.max(0, Math.min(room, chargeRate * aggressive));
+        soc += charge;
+        buy = net + charge;
+        logs.push({ h, msg: charge > 0.1
+          ? `谷段低电价，储能充电 ${charge.toFixed(1)}kW，总购电 ${buy.toFixed(1)}kW`
+          : `谷段运行，电网购电 ${buy.toFixed(1)}kW`, type: 'plan' });
+      } else {
+        const room = soc - minReserve;
+        if (room > 0.1) {
+          discharge = Math.min(net, dischargeRate * aggressive, room);
+          soc -= discharge;
+        }
+        buy = net - discharge;
+        if (price === cfg.pricePeak && discharge > 0.1) {
+          logs.push({ h, msg: `⚡峰段 ${price}元/kWh，储能放电 ${discharge.toFixed(1)}kW，购电降至 ${buy.toFixed(1)}kW`, type: 'ai' });
+        } else if (discharge > 0.1) {
+          logs.push({ h, msg: `储能放电 ${discharge.toFixed(1)}kW，电网购电 ${buy.toFixed(1)}kW`, type: 'ai' });
+        } else {
+          logs.push({ h, msg: `储能不足，电网购电 ${buy.toFixed(1)}kW`, type: 'warn' });
+        }
+      }
+    } else {
+      const surplus = -net;
+      const room = cfg.storageCap - soc;
+      charge = Math.max(0, Math.min(surplus, chargeRate, room));
+      soc += charge;
+      buy = Math.max(0, surplus - charge);
+      logs.push({ h, msg: charge > 0.1
+        ? `光伏余电 ${surplus.toFixed(1)}kW，储能充电 ${charge.toFixed(1)}kW`
+        : `光伏余电 ${surplus.toFixed(1)}kW 全额上网`, type: 'ai' });
+    }
+
+    solar.push(pv); demand.push(dem); storage.push(soc);
+    gridBuy.push(buy); storageFlow.push(charge - discharge);
+  }
+
+  const totalSolar   = solar.reduce((a,b)=>a+b,0);
+  const totalDemand  = demand.reduce((a,b)=>a+b,0);
+  const totalBuy     = gridBuy.reduce((a,b)=>a+b,0);
+  const totalDischarge = storageFlow.filter(x => x < 0).reduce((a,b)=>a+Math.abs(b),0);
+
+  let solarDirect = 0;
+  for (let h = 0; h < 24; h++) solarDirect += Math.min(solar[h], demand[h]);
+  const greenSupply = solarDirect + totalDischarge;
+  const util = totalDemand > 0 ? Math.min(100, greenSupply / totalDemand * 100) : 0;
+
+  let costWithAI = 0, costWithout = 0;
+  for (let h = 0; h < 24; h++) {
+    costWithAI  += gridBuy[h] * priceAt(h, cfg);
+    costWithout += demand[h]  * priceAt(h, cfg);
+  }
+  const save = Math.max(0, costWithout - costWithAI);
+  const carbon = greenSupply * 0.581;
+
+  logs.push({ h: '📋', msg: `方案汇总：光伏 ${totalSolar.toFixed(1)}kWh ｜ 储能放电 ${totalDischarge.toFixed(1)}kWh ｜ 购电 ${totalBuy.toFixed(1)}kWh ｜ 节省 ${save.toFixed(1)} 元 ｜ 减碳 ${carbon.toFixed(1)} kg`, type: 'summary' });
+
+  return { solar, demand, storage, gridBuy, storageFlow, logs,
+    totalSolar, totalDemand, totalBuy, util, save, carbon, costWithAI, costWithout };
+}
+
+/* ================================================================
+   五、顶部横条更新
+   ================================================================ */
+function updateTopBars() {
+  const cfg = getConfig();
+  let solarTotal = 0;
+  for (let h = 0; h < 24; h++) solarTotal += solarAt(h, cfg);
+  const storageCap = cfg.storageCap;
+  const total = solarTotal + storageCap || 1;
+
+  let solarRatio = solarTotal / total;
+  let storageRatio = storageCap / total;
+  solarRatio = Math.max(0.15, Math.min(0.85, solarRatio));
+  storageRatio = 1 - solarRatio;
+
+  $('barSolar').style.flex = `0 0 ${(solarRatio * 100).toFixed(2)}%`;
+  $('barStorage').style.flex = `0 0 ${(storageRatio * 100).toFixed(2)}%`;
+  $('solarPct').textContent = (solarRatio * 100).toFixed(0) + '%';
+  $('storagePct').textContent = (storageRatio * 100).toFixed(0) + '%';
+  $('solarKwh').textContent = solarTotal.toFixed(0) + ' kWh';
+  $('storageKwh').textContent = storageCap.toFixed(0) + ' kWh';
+}
+
+/* ================================================================
+   六、曲线绘制（含坐标轴说明）
+   ================================================================ */
+const chartCanvas = $('chart');
+const chartCtx = chartCanvas.getContext('2d');
+let chartW = 300, chartH = 240;
+let lastChartData = null, lastChartProgress = 0, lastChartCfg = null;
+
+function resizeChart() {
+  const container = chartCanvas.parentElement;
+  const rect = container.getBoundingClientRect();
+  const style = getComputedStyle(container);
+  const padX = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
+  const padY = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
+  const dpr = window.devicePixelRatio || 1;
+
+  const cssW = Math.max(80, rect.width - padX);
+  const cssH = Math.max(50, rect.height - padY);
+
+  chartCanvas.width  = cssW * dpr;
+  chartCanvas.height = cssH * dpr;
+  chartCanvas.style.width  = cssW + 'px';
+  chartCanvas.style.height = cssH + 'px';
+
+  chartW = cssW;
+  chartH = cssH;
+  chartCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  if (lastChartData) drawChart(lastChartData, lastChartProgress, lastChartCfg);
+  else drawEmptyChart();
+}
+
+function drawChart(d, progress, cfg) {
+  lastChartData = d; lastChartProgress = progress; lastChartCfg = cfg;
+
+  const W = chartW, H = chartH;
+  const pad = { top: 18, right: 14, bottom: 30, left: 48 };
+  const pw = W - pad.left - pad.right;
+  const ph = H - pad.top - pad.bottom;
+  const maxY = Math.max(cfg.solarCap, cfg.storageCap, cfg.demandScale * 22) * 1.1;
+
+  chartCtx.clearRect(0, 0, W, H);
+
+  chartCtx.fillStyle = 'rgba(0,0,0,0.25)';
+  chartCtx.fillRect(pad.left, pad.top, pw, ph);
+
+  chartCtx.fillStyle = 'rgba(248,113,113,0.08)';
+  chartCtx.fillRect(pad.left + pw * 18 / 23, pad.top, pw * 3 / 23, ph);
+  chartCtx.fillStyle = 'rgba(74,222,128,0.05)';
+  chartCtx.fillRect(pad.left, pad.top, pw * 6 / 23, ph);
+  chartCtx.fillRect(pad.left + pw * 22 / 23, pad.top, pw * 1 / 23, ph);
+
+  // Y 轴网格 + 数字
+  chartCtx.font = '9px "Microsoft YaHei"';
+  for (let i = 0; i <= 3; i++) {
+    const y = pad.top + ph * i / 3;
+    chartCtx.strokeStyle = 'rgba(255,255,255,0.06)';
+    chartCtx.lineWidth = 1;
+    chartCtx.beginPath();
+    chartCtx.moveTo(pad.left, y);
+    chartCtx.lineTo(pad.left + pw, y);
+    chartCtx.stroke();
+
+    const val = maxY * (3 - i) / 3;
+    chartCtx.fillStyle = '#7a8fa8';
+    chartCtx.textAlign = 'right';
+    chartCtx.textBaseline = 'middle';
+    chartCtx.fillText(val.toFixed(0), pad.left - 5, y);
+  }
+
+  // X 轴网格 + 数字
+  const xTicks = [0, 4, 8, 12, 16, 20, 24];
+  chartCtx.textAlign = 'center';
+  chartCtx.textBaseline = 'top';
+  xTicks.forEach(h => {
+    const x = pad.left + pw * h / 24;
+    chartCtx.strokeStyle = 'rgba(255,255,255,0.04)';
+    chartCtx.beginPath();
+    chartCtx.moveTo(x, pad.top);
+    chartCtx.lineTo(x, pad.top + ph);
+    chartCtx.stroke();
+
+    chartCtx.fillStyle = '#7a8fa8';
+    chartCtx.font = '9px "Microsoft YaHei"';
+    chartCtx.fillText(h + '', x, pad.top + ph + 4);
+  });
+
+  // 轴标签
+  chartCtx.fillStyle = '#a78bfa';
+  chartCtx.font = 'bold 9px "Microsoft YaHei"';
+  chartCtx.textAlign = 'left';
+  chartCtx.textBaseline = 'alphabetic';
+  chartCtx.fillText('kW', 4, pad.top + 8);
+  chartCtx.fillStyle = '#7a8fa8';
+  chartCtx.font = '8px "Microsoft YaHei"';
+  chartCtx.fillText('功率', 4, pad.top + 18);
+
+  chartCtx.fillStyle = '#a78bfa';
+  chartCtx.font = 'bold 9px "Microsoft YaHei"';
+  chartCtx.textAlign = 'center';
+  chartCtx.textBaseline = 'alphabetic';
+  chartCtx.fillText('时间（小时）', pad.left + pw / 2, H - 4);
+
+  // 储能面积
+  chartCtx.fillStyle = 'rgba(74, 222, 128, 0.14)';
+  chartCtx.beginPath();
+  let started = false;
+  for (let h = 0; h < 24; h++) {
+    if (d.storage[h] === undefined || isNaN(d.storage[h])) continue;
+    const x = pad.left + pw * h / 23;
+    const y = pad.top + ph * (1 - d.storage[h] / maxY);
+    if (!started) { chartCtx.moveTo(x, pad.top + ph); chartCtx.lineTo(x, y); started = true; }
+    else chartCtx.lineTo(x, y);
+  }
+  if (started) {
+    const lastX = pad.left + pw * (progress - 1) / 23;
+    chartCtx.lineTo(lastX, pad.top + ph);
+    chartCtx.closePath();
+    chartCtx.fill();
+  }
+
+  // 曲线
+  function plotLine(arr, color, width, dash) {
+    chartCtx.strokeStyle = color;
+    chartCtx.lineWidth = width;
+    chartCtx.setLineDash(dash || []);
+    chartCtx.beginPath();
+    let s = false;
+    for (let h = 0; h < 24; h++) {
+      if (arr[h] === undefined || isNaN(arr[h])) continue;
+      const x = pad.left + pw * h / 23;
+      const y = pad.top + ph * (1 - arr[h] / maxY);
+      if (!s) { chartCtx.moveTo(x, y); s = true; }
+      else chartCtx.lineTo(x, y);
+    }
+    chartCtx.stroke();
+    chartCtx.setLineDash([]);
+  }
+
+  plotLine(d.solar,   '#fbbf24', 2);
+  plotLine(d.demand,  '#22d3ee', 1.6, [4, 3]);
+  plotLine(d.storage, '#4ade80', 1.8);
+  plotLine(d.gridBuy, '#f87171', 1.6);
+
+  // 当前时刻标记
+  if (progress > 0 && progress <= 24) {
+    const curX = pad.left + pw * (progress - 1) / 23;
+    chartCtx.strokeStyle = 'rgba(167,139,250,0.6)';
+    chartCtx.lineWidth = 1;
+    chartCtx.setLineDash([3, 3]);
+    chartCtx.beginPath();
+    chartCtx.moveTo(curX, pad.top);
+    chartCtx.lineTo(curX, pad.top + ph);
+    chartCtx.stroke();
+    chartCtx.setLineDash([]);
+  }
+}
+
+function drawEmptyChart() {
+  const W = chartW, H = chartH;
+  chartCtx.clearRect(0, 0, W, H);
+
+  const pad = { top: 18, right: 14, bottom: 30, left: 48 };
+  const pw = W - pad.left - pad.right;
+  const ph = H - pad.top - pad.bottom;
+
+  chartCtx.fillStyle = 'rgba(0,0,0,0.2)';
+  chartCtx.fillRect(pad.left, pad.top, pw, ph);
+
+  chartCtx.strokeStyle = 'rgba(255,255,255,0.05)';
+  for (let i = 0; i <= 3; i++) {
+    const y = pad.top + ph * i / 3;
+    chartCtx.beginPath();
+    chartCtx.moveTo(pad.left, y);
+    chartCtx.lineTo(pad.left + pw, y);
+    chartCtx.stroke();
+  }
+
+  chartCtx.fillStyle = '#a78bfa';
+  chartCtx.font = 'bold 9px "Microsoft YaHei"';
+  chartCtx.textAlign = 'left';
+  chartCtx.fillText('kW', 4, pad.top + 8);
+  chartCtx.font = '8px "Microsoft YaHei"';
+  chartCtx.fillStyle = '#7a8fa8';
+  chartCtx.fillText('功率', 4, pad.top + 18);
+
+  chartCtx.fillStyle = '#a78bfa';
+  chartCtx.font = 'bold 9px "Microsoft YaHei"';
+  chartCtx.textAlign = 'center';
+  chartCtx.fillText('时间（小时）', pad.left + pw / 2, H - 4);
+
+  chartCtx.fillStyle = '#46586b';
+  chartCtx.font = '11px "Microsoft YaHei"';
+  chartCtx.textAlign = 'center';
+  chartCtx.textBaseline = 'middle';
+  chartCtx.fillText('等待调度…', pad.left + pw / 2, pad.top + ph / 2);
+  lastChartData = null;
+}
+
+/* ================================================================
+   七、背景粒子
+   ================================================================ */
+const topoCanvas = $('gridCanvas');
+const tctx = topoCanvas.getContext('2d');
+
+function resizeBackground() {
+  const wrapper = topoCanvas.parentElement;
+  const dpr = window.devicePixelRatio || 1;
+  const W = wrapper.clientWidth;
+  const H = wrapper.clientHeight;
+  topoCanvas.width  = W * dpr;
+  topoCanvas.height = H * dpr;
+  topoCanvas.style.width  = W + 'px';
+  topoCanvas.style.height = H + 'px';
+  tctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+function getElementRect(el, wrapper) {
+  const r = el.getBoundingClientRect();
+  const w = wrapper.getBoundingClientRect();
+  return { x: r.left - w.left, y: r.top - w.top, w: r.width, h: r.height };
+}
+
+function drawBackground() {
+  const wrapper = topoCanvas.parentElement;
+  const W = wrapper.clientWidth;
+  const H = wrapper.clientHeight;
+  tctx.clearRect(0, 0, W, H);
+
+  tctx.fillStyle = 'rgba(255,255,255,0.015)';
+  tctx.font = 'bold 70px "Microsoft YaHei"';
+  tctx.textAlign = 'center';
+  tctx.fillText('ENERGY FLOW', W / 2, H / 2 + 10);
+
+  const barsEl = document.querySelector('.topo-bars');
+  const cardEl = document.querySelector('.topo-card-scroll');
+  const userEl = document.querySelector('.topo-user');
+  if (!barsEl || !cardEl || !userEl) { requestAnimationFrame(drawBackground); return; }
+
+  const bars = getElementRect(barsEl, wrapper);
+  const card = getElementRect(cardEl, wrapper);
+  const user = getElementRect(userEl, wrapper);
+
+  const p1s = { x: bars.x + bars.w / 2, y: bars.y + bars.h };
+  const p1e = { x: card.x + card.w / 2, y: card.y };
+  drawDashedParticles(p1s, p1e, '#a78bfa');
+
+  const p2s = { x: card.x + card.w / 2, y: card.y + card.h };
+  const p2e = { x: user.x + user.w / 2, y: user.y };
+  drawDashedParticles(p2s, p2e, '#4ade80');
+
+  requestAnimationFrame(drawBackground);
+}
+
+function drawDashedParticles(start, end, color) {
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  const len = Math.hypot(dx, dy);
+  if (len < 10) return;
+
+  const spacing = 14;
+  const count = Math.max(2, Math.floor(len / spacing));
+  const flow = performance.now() * 0.00008;
+
+  for (let i = 0; i < count; i++) {
+    const t = ((i / count) + flow) % 1;
+    const px = start.x + dx * t;
+    const py = start.y + dy * t;
+
+    tctx.beginPath();
+    tctx.arc(px, py, 3, 0, Math.PI * 2);
+    tctx.fillStyle = color;
+    tctx.shadowBlur = 12;
+    tctx.shadowColor = color;
+    tctx.globalAlpha = 0.55 + Math.sin(t * Math.PI) * 0.45;
+    tctx.fill();
+    tctx.shadowBlur = 0;
+    tctx.globalAlpha = 1;
+  }
+}
+
+/* ================================================================
+   八、统计 & 目标
+   ================================================================ */
+function resetStatCards() {
+  const units = { statSolar: 'kWh', statDemand: 'kWh', statUtil: '%', statSave: '元', statCarbon: 'kg' };
+  Object.keys(units).forEach(id => {
+    $(id).innerHTML = '--<span class="unit">' + units[id] + '</span>';
+  });
+  $('resSave').innerHTML = '--<i>元</i>';
+  $('resSide').textContent = '待调度';
+  $('resSide').className = 'res-side';
+  $('userValue').textContent = '待运行 · 点击「AI智能调度」启动';
+}
+
+function updateStats(d, cfg) {
+  $('statSolar').innerHTML  = d.totalSolar.toFixed(1)  + '<span class="unit">kWh</span>';
+  $('statDemand').innerHTML = d.totalDemand.toFixed(1) + '<span class="unit">kWh</span>';
+  $('statUtil').innerHTML   = d.util.toFixed(0)        + '<span class="unit">%</span>';
+  $('statSave').innerHTML   = d.save.toFixed(1)        + '<span class="unit">元</span>';
+  $('statCarbon').innerHTML = d.carbon.toFixed(1)      + '<span class="unit">kg</span>';
+
+  $('resSave').innerHTML = d.save.toFixed(1) + '<i>元</i>';
+  if (d.save >= cfg.targetSave) {
+    $('resSide').textContent = '🎉 已达标';
+    $('resSide').className = 'res-side';
+  } else {
+    $('resSide').textContent = '📈 接近目标';
+    $('resSide').className = 'res-side warn';
+  }
+
+  const bar = $('targetBar');
+  bar.style.display = 'flex';
+  const pct = Math.min(100, cfg.targetSave > 0 ? (d.save / cfg.targetSave) * 100 : 100);
+  $('progressFill').style.width = pct + '%';
+  $('progressText').textContent = pct.toFixed(0) + '%';
+
+  if (d.save >= cfg.targetSave) {
+    $('targetIcon').textContent = '🎉';
+    $('targetResult').innerHTML = `<span style="color:#4ade80">已达成！实际节省 ${d.save.toFixed(1)} 元 / 目标 ${cfg.targetSave} 元</span>`;
+  } else {
+    $('targetIcon').textContent = '📈';
+    $('targetResult').innerHTML = `<span style="color:#fbbf24">接近目标：实际节省 ${d.save.toFixed(1)} 元 / 目标 ${cfg.targetSave} 元</span>`;
+  }
+}
+
+/* ================================================================
+   九、主流程
+   ================================================================ */
+let running = false;
+let scheduleData = null;
+let currentHour = 0;
+
+function runSimulation() {
+  if (running) return;
+  running = true;
+  $('btnRun').disabled = true;
+  $('btnReset').disabled = true;
+  resetStatCards();
+  $('targetBar').style.display = 'none';
+
+  if (window.eruda) { try { console.clear(); } catch(e) {} }
+
+  const cfg = getConfig();
+  const d = aiDispatch(cfg);
+  scheduleData = d;
+  currentHour = 0;
+
+  logToEruda('═══════════════════════════════', 'log');
+  logToEruda('🤖 AI 调度引擎启动', 'log');
+  logToEruda('参数：光伏 ' + cfg.solarCap + 'kW ｜ 储能 ' + cfg.storageCap + 'kWh ｜ 目标 ' + cfg.targetSave + '元', 'log');
+  if (d.attempts > 0) logToEruda('🔄 迭代优化 ' + d.attempts + ' 次', 'log');
+  logToEruda('═══════════════════════════════', 'log');
+
+  let step = 0;
+  const timer = setInterval(() => {
+    if (step >= 24) {
+      clearInterval(timer);
+      currentHour = 23;
+      updateStats(d, cfg);
+      running = false;
+      $('btnRun').disabled = false;
+      $('btnReset').disabled = false;
+      logToEruda('✅ 调度完成：节省 ' + d.save.toFixed(1) + ' 元，减碳 ' + d.carbon.toFixed(1) + ' kg', 'log');
+      return;
+    }
+
+    currentHour = step;
+    $('userValue').textContent = d.demand[currentHour].toFixed(1) + ' kW · 当前 ' + String(currentHour).padStart(2, '0') + ':00';
+
+    const partial = { solar: [], demand: [], storage: [], gridBuy: [] };
+    for (let i = 0; i < 24; i++) {
+      if (i <= step) {
+        partial.solar.push(d.solar[i]);
+        partial.demand.push(d.demand[i]);
+        partial.storage.push(d.storage[i]);
+        partial.gridBuy.push(d.gridBuy[i]);
+      } else {
+        partial.solar.push(NaN); partial.demand.push(NaN);
+        partial.storage.push(NaN); partial.gridBuy.push(NaN);
+      }
+    }
+    drawChart(partial, step + 1, cfg);
+
+    const log = d.logs[step];
+    if (log) {
+      const timeStr = typeof log.h === 'number' ? String(log.h).padStart(2, '0') + ':00' : log.h;
+      logAI(timeStr + '  ' + log.msg, log.type);
+    }
+
+    step++;
+  }, 130);
+}
+
+function resetSimulation() {
+  if (running) return;
+  scheduleData = null;
+  currentHour = 0;
+  drawEmptyChart();
+  if (window.eruda) { try { console.clear(); } catch(e){} }
+  logToEruda('[系统] 已重置', 'log');
+  $('targetBar').style.display = 'none';
+  resetStatCards();
+}
+
+/* ================================================================
+   十、初始化
+   ================================================================ */
+function initAll() {
+  updateTopBars();
+  resizeBackground();
+  resizeChart();
+  drawEmptyChart();
+  drawBackground();
+  resetStatCards();
+}
+
+document.querySelectorAll('input[type="number"]').forEach(inp => {
+  inp.addEventListener('input', updateTopBars);
+});
+
+$('btnRun').addEventListener('click', runSimulation);
+$('btnReset').addEventListener('click', resetSimulation);
+
+window.addEventListener('resize', () => {
+  resizeBackground();
+  resizeChart();
+});
+
+window.addEventListener('load', initAll);
+if (document.readyState === 'complete') initAll();
+</script>
+</body>
+</html>
