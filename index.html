@@ -145,7 +145,7 @@
   /* ============ 中间横向滚动卡片 ============ */
   .topo-card-scroll {
     flex: 0 0 auto;
-    height: 300px;
+    height: 320px;
     background: rgba(30, 41, 59, 0.94);
     border: 2px solid rgba(167, 139, 250, 0.55);
     border-radius: 14px;
@@ -286,11 +286,9 @@
   .stats-mini-grid .s-item.save    { color: var(--purple); }
   .stats-mini-grid .s-item.carbon  { color: var(--green); }
 
-  /* ============ 结果卡（节省电费大字） ============ */
+  /* ============ 结果卡 ============ */
   .card-result-mini { width: 220px; align-items: center; justify-content: center; }
-  .card-result-mini .res-label {
-    font-size: 13px; color: #7a8fa8; text-align: center;
-  }
+  .card-result-mini .res-label { font-size: 13px; color: #7a8fa8; text-align: center; }
   .card-result-mini .res-value {
     font-size: 46px; font-weight: 800;
     color: #a78bfa;
@@ -329,11 +327,7 @@
     flex: 1;
     justify-content: flex-end;
   }
-  .chart-legend-inline span {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
+  .chart-legend-inline span { display: flex; align-items: center; gap: 4px; }
   .chart-legend-inline i {
     width: 12px; height: 3px;
     border-radius: 1.5px;
@@ -347,9 +341,136 @@
     border-radius: 5px;
     padding: 4px;
   }
-  #chart {
-    flex: 1; width: 100%; height: 100%; display: block;
+  #chart { flex: 1; width: 100%; height: 100%; display: block; }
+
+  /* ============ 🤖 AI 对话卡 ============ */
+  .card-ai { width: 400px; }
+  .card-ai .ai-config-row {
+    display: flex;
+    gap: 4px;
+    align-items: stretch;
   }
+  .card-ai .ai-config-row input {
+    flex: 1;
+    padding: 4px 6px;
+    font-size: 11px;
+    background: rgba(0,0,0,0.42);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 4px;
+    color: #ccd6f6;
+    font-family: inherit;
+    min-width: 0;
+  }
+  .card-ai .ai-config-row input:focus {
+    outline: none; border-color: #a78bfa;
+  }
+  .card-ai .ai-config-row input::placeholder { color: #4a5b70; }
+  .card-ai .ai-config-row button {
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    background: rgba(167,139,250,0.22);
+    border: 1px solid rgba(167,139,250,0.4);
+    border-radius: 4px;
+    color: #d0c0ff;
+    font-family: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .card-ai .ai-config-row button:hover { background: rgba(167,139,250,0.35); }
+  .card-ai .ai-config-row button:disabled { opacity: .5; cursor: not-allowed; }
+
+  .card-ai .ai-status {
+    font-size: 10.5px;
+    color: #7a8fa8;
+    padding: 4px 7px;
+    background: rgba(0,0,0,0.2);
+    border-radius: 4px;
+    line-height: 1.35;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .card-ai .ai-status::before {
+    content: '';
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #7a8fa8;
+    flex: 0 0 auto;
+  }
+  .card-ai .ai-status.on { color: #4ade80; }
+  .card-ai .ai-status.on::before { background: #4ade80; box-shadow: 0 0 6px #4ade80; }
+  .card-ai .ai-status.err { color: #f87171; }
+  .card-ai .ai-status.err::before { background: #f87171; box-shadow: 0 0 6px #f87171; }
+
+  .card-ai .ai-chat {
+    flex: 1;
+    overflow-y: auto;
+    background: rgba(0,0,0,0.3);
+    border-radius: 6px;
+    padding: 7px 9px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    font-size: 11px;
+    line-height: 1.45;
+    scrollbar-width: thin;
+    scrollbar-color: #a78bfa rgba(0,0,0,0.2);
+  }
+  .card-ai .ai-chat::-webkit-scrollbar { width: 5px; }
+  .card-ai .ai-chat::-webkit-scrollbar-thumb { background: #a78bfa; border-radius: 2.5px; }
+
+  .card-ai .msg-u {
+    align-self: flex-end;
+    background: rgba(167,139,250,0.28);
+    padding: 4px 9px;
+    border-radius: 8px 8px 2px 8px;
+    color: #e6dcff;
+    max-width: 88%;
+    word-break: break-word;
+  }
+  .card-ai .msg-a {
+    align-self: flex-start;
+    background: rgba(74,222,128,0.13);
+    padding: 4px 9px;
+    border-radius: 8px 8px 8px 2px;
+    color: #c8e6d0;
+    max-width: 88%;
+    word-break: break-word;
+  }
+  .card-ai .msg-s {
+    color: #fbbf24;
+    align-self: center;
+    font-size: 10px;
+    padding: 2px 0;
+  }
+
+  .card-ai .ai-input-row {
+    display: flex;
+    gap: 4px;
+  }
+  .card-ai .ai-input-row input {
+    flex: 1;
+    padding: 6px 9px;
+    font-size: 11.5px;
+    background: rgba(0,0,0,0.42);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 5px;
+    color: #ccd6f6;
+    font-family: inherit;
+  }
+  .card-ai .ai-input-row input:focus { outline: none; border-color: #a78bfa; }
+  .card-ai .ai-input-row button {
+    padding: 6px 14px;
+    font-size: 11.5px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #a78bfa, #7c3aed);
+    border: none;
+    border-radius: 5px;
+    color: #fff;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .card-ai .ai-input-row button:disabled { opacity: .5; cursor: not-allowed; }
 
   /* ============ 底部校园用电 ============ */
   .topo-user {
@@ -363,10 +484,7 @@
     padding: 4px;
   }
   .topo-user .user-title { font-size: 20px; line-height: 1.2; }
-  .topo-user .user-value {
-    font-size: 13px; font-weight: 600;
-    opacity: 0.78; margin-top: 2px;
-  }
+  .topo-user .user-value { font-size: 13px; font-weight: 600; opacity: 0.78; margin-top: 2px; }
 
   /* ============ 目标条 ============ */
   .target-bar {
@@ -442,7 +560,6 @@
           <div class="mini-card card-combined">
             <div class="mc-title">⚙️ 参数设置 & 📊 调度结果</div>
 
-            <!-- 参数区 -->
             <div class="section-label">参数输入</div>
             <div class="params-grid">
               <div class="f"><label>☀️ 光伏</label><input type="number" id="inSolarCap" value="25" min="1" max="200"></div>
@@ -455,10 +572,8 @@
               <div class="f"><label>🤖 激进</label><input type="number" id="inAggressive" value="1.0" min="0.5" max="2" step="0.1"></div>
             </div>
 
-            <!-- 分隔线 -->
             <div class="section-divider"></div>
 
-            <!-- 统计区 -->
             <div class="section-label">调度输出</div>
             <div class="stats-mini-grid">
               <div class="s-item solar">
@@ -506,6 +621,33 @@
               <canvas id="chart"></canvas>
             </div>
           </div>
+
+          <!-- 🤖 AI 对话卡 -->
+          <div class="mini-card card-ai">
+            <div class="mc-title">🤖 AI 助手 · 自然语言调参 & 问答</div>
+
+            <div class="ai-config-row">
+              <input type="password" id="inApiKey" placeholder="API Key（可留空走本地模式）" autocomplete="off">
+              <button id="btnSaveKey">保存</button>
+              <button id="btnTestKey">测试</button>
+            </div>
+            <div class="ai-config-row">
+              <input type="text" id="inBaseUrl" placeholder="Base URL" value="https://api.deepseek.com/v1">
+              <input type="text" id="inModel" placeholder="模型" value="deepseek-chat" style="max-width:110px;">
+            </div>
+
+            <div class="ai-status" id="aiStatus">本地模式 · 支持简单中文调参</div>
+
+            <div class="ai-chat" id="aiChat">
+              <div class="msg-a">你好！我是校园绿色电力小脑的 AI 助手。试试这样告诉我：「光伏调到50，储能改成80，目标120」，或者问我「为什么18点要放电？」</div>
+            </div>
+
+            <div class="ai-input-row">
+              <input type="text" id="inAiPrompt" placeholder="输入调参指令或问题…">
+              <button id="btnAsk">发送</button>
+            </div>
+          </div>
+
         </div>
 
         <!-- 底部校园用电 -->
@@ -548,15 +690,10 @@ $('btnDebug').addEventListener('click', () => {
 function logAI(msg, type = 'log') {
   if (!window.eruda) return;
   const styles = {
-    log:     'color:#8aa0b8;',
-    ai:      'color:#4ade80;',
-    plan:    'color:#a78bfa;',
-    warn:    'color:#fbbf24;',
-    error:   'color:#f87171;font-weight:bold;',
-    summary: 'color:#a78bfa;font-weight:bold;',
-    success: 'color:#4ade80;font-weight:bold;',
-    info:    'color:#8b98a8;',
-    service: 'color:#64ffda;'
+    log:'color:#8aa0b8;', ai:'color:#4ade80;', plan:'color:#a78bfa;',
+    warn:'color:#fbbf24;', error:'color:#f87171;font-weight:bold;',
+    summary:'color:#a78bfa;font-weight:bold;', success:'color:#4ade80;font-weight:bold;',
+    info:'color:#8b98a8;', service:'color:#64ffda;'
   };
   console.log('%c' + msg, styles[type] || styles.log);
 }
@@ -607,13 +744,11 @@ function priceAt(h, cfg) {
   if (h >= 7  && h <= 17) return cfg.priceFlat;
   return cfg.priceValley;
 }
-
 function solarAt(h, cfg) {
   if (h < 6 || h > 18) return 0;
   const x = (h - 12) / 5;
   return Math.max(0, cfg.solarCap * Math.exp(-1.8 * x * x));
 }
-
 function demandAt(h, cfg) {
   let base;
   if (h >= 0 && h <= 5)        base = 3;
@@ -626,7 +761,7 @@ function demandAt(h, cfg) {
 }
 
 /* ----------------------------------------------------------------
-   四、AI 调度
+   四、AI 调度（规则启发式 + 目标导向迭代，属"智能算法"范畴）
    ---------------------------------------------------------------- */
 function aiDispatch(cfg) {
   const baseCharge    = cfg.storageCap * 0.20;
@@ -722,7 +857,7 @@ function tryDispatch(cfg, maxCharge, maxDischarge, minReserve, aggressive) {
 }
 
 /* ================================================================
-   五、顶部横条更新
+   五、顶部横条
    ================================================================ */
 function updateTopBars() {
   const cfg = getConfig();
@@ -745,7 +880,7 @@ function updateTopBars() {
 }
 
 /* ================================================================
-   六、曲线绘制（含坐标轴说明）
+   六、曲线绘制（已修 X 轴错位 / 储能面积收尾）
    ================================================================ */
 const chartCanvas = $('chart');
 const chartCtx = chartCanvas.getContext('2d');
@@ -768,8 +903,7 @@ function resizeChart() {
   chartCanvas.style.width  = cssW + 'px';
   chartCanvas.style.height = cssH + 'px';
 
-  chartW = cssW;
-  chartH = cssH;
+  chartW = cssW; chartH = cssH;
   chartCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
   if (lastChartData) drawChart(lastChartData, lastChartProgress, lastChartCfg);
@@ -790,13 +924,14 @@ function drawChart(d, progress, cfg) {
   chartCtx.fillStyle = 'rgba(0,0,0,0.25)';
   chartCtx.fillRect(pad.left, pad.top, pw, ph);
 
+  // 峰谷底色（按 24h 对齐：0-6 谷，18-21 峰，22-24 谷）
   chartCtx.fillStyle = 'rgba(248,113,113,0.08)';
-  chartCtx.fillRect(pad.left + pw * 18 / 23, pad.top, pw * 3 / 23, ph);
+  chartCtx.fillRect(pad.left + pw * 18 / 24, pad.top, pw * 4 / 24, ph);
   chartCtx.fillStyle = 'rgba(74,222,128,0.05)';
-  chartCtx.fillRect(pad.left, pad.top, pw * 6 / 23, ph);
-  chartCtx.fillRect(pad.left + pw * 22 / 23, pad.top, pw * 1 / 23, ph);
+  chartCtx.fillRect(pad.left, pad.top, pw * 6 / 24, ph);
+  chartCtx.fillRect(pad.left + pw * 22 / 24, pad.top, pw * 2 / 24, ph);
 
-  // Y 轴网格 + 数字
+  // Y 轴
   chartCtx.font = '9px "Microsoft YaHei"';
   for (let i = 0; i <= 3; i++) {
     const y = pad.top + ph * i / 3;
@@ -814,7 +949,7 @@ function drawChart(d, progress, cfg) {
     chartCtx.fillText(val.toFixed(0), pad.left - 5, y);
   }
 
-  // X 轴网格 + 数字
+  // X 轴刻度（h/24 与曲线数据统一）
   const xTicks = [0, 4, 8, 12, 16, 20, 24];
   chartCtx.textAlign = 'center';
   chartCtx.textBaseline = 'top';
@@ -847,25 +982,26 @@ function drawChart(d, progress, cfg) {
   chartCtx.textBaseline = 'alphabetic';
   chartCtx.fillText('时间（小时）', pad.left + pw / 2, H - 4);
 
-  // 储能面积
+  // 储能面积（修正：/24，收尾用 progress-1 对齐数据点）
   chartCtx.fillStyle = 'rgba(74, 222, 128, 0.14)';
   chartCtx.beginPath();
   let started = false;
   for (let h = 0; h < 24; h++) {
     if (d.storage[h] === undefined || isNaN(d.storage[h])) continue;
-    const x = pad.left + pw * h / 23;
+    const x = pad.left + pw * h / 24;
     const y = pad.top + ph * (1 - d.storage[h] / maxY);
     if (!started) { chartCtx.moveTo(x, pad.top + ph); chartCtx.lineTo(x, y); started = true; }
     else chartCtx.lineTo(x, y);
   }
   if (started) {
-    const lastX = pad.left + pw * (progress - 1) / 23;
+    const lastH = Math.max(0, Math.min(23, progress - 1));
+    const lastX = pad.left + pw * lastH / 24;
     chartCtx.lineTo(lastX, pad.top + ph);
     chartCtx.closePath();
     chartCtx.fill();
   }
 
-  // 曲线
+  // 四条曲线（同样 /24 对齐）
   function plotLine(arr, color, width, dash) {
     chartCtx.strokeStyle = color;
     chartCtx.lineWidth = width;
@@ -874,7 +1010,7 @@ function drawChart(d, progress, cfg) {
     let s = false;
     for (let h = 0; h < 24; h++) {
       if (arr[h] === undefined || isNaN(arr[h])) continue;
-      const x = pad.left + pw * h / 23;
+      const x = pad.left + pw * h / 24;
       const y = pad.top + ph * (1 - arr[h] / maxY);
       if (!s) { chartCtx.moveTo(x, y); s = true; }
       else chartCtx.lineTo(x, y);
@@ -890,7 +1026,8 @@ function drawChart(d, progress, cfg) {
 
   // 当前时刻标记
   if (progress > 0 && progress <= 24) {
-    const curX = pad.left + pw * (progress - 1) / 23;
+    const curH = Math.max(0, Math.min(23, progress - 1));
+    const curX = pad.left + pw * curH / 24;
     chartCtx.strokeStyle = 'rgba(167,139,250,0.6)';
     chartCtx.lineWidth = 1;
     chartCtx.setLineDash([3, 3]);
@@ -1029,7 +1166,7 @@ function drawDashedParticles(start, end, color) {
    八、统计 & 目标
    ================================================================ */
 function resetStatCards() {
-  const units = { statSolar: 'kWh', statDemand: 'kWh', statUtil: '%', statSave: '元', statCarbon: 'kg' };
+  const units = { statSolar:'kWh', statDemand:'kWh', statUtil:'%', statSave:'元', statCarbon:'kg' };
   Object.keys(units).forEach(id => {
     $(id).innerHTML = '--<span class="unit">' + units[id] + '</span>';
   });
@@ -1071,7 +1208,230 @@ function updateStats(d, cfg) {
 }
 
 /* ================================================================
-   九、主流程
+   九、🤖 大模型接入层（B3：有 Key 走真 API，无 Key 走本地兜底）
+   ================================================================ */
+const LLM = {
+  key: '',
+  baseUrl: 'https://api.deepseek.com/v1',
+  model: 'deepseek-chat',
+  load() {
+    this.key     = localStorage.getItem('greenpower_llm_key')     || '';
+    this.baseUrl = localStorage.getItem('greenpower_llm_url')     || 'https://api.deepseek.com/v1';
+    this.model   = localStorage.getItem('greenpower_llm_model')   || 'deepseek-chat';
+    $('inApiKey').value  = this.key;
+    $('inBaseUrl').value = this.baseUrl;
+    $('inModel').value   = this.model;
+  },
+  save() {
+    this.key     = $('inApiKey').value.trim();
+    this.baseUrl = $('inBaseUrl').value.trim() || 'https://api.deepseek.com/v1';
+    this.model   = $('inModel').value.trim()   || 'deepseek-chat';
+    localStorage.setItem('greenpower_llm_key',   this.key);
+    localStorage.setItem('greenpower_llm_url',   this.baseUrl);
+    localStorage.setItem('greenpower_llm_model', this.model);
+  },
+  enabled() { return !!this.key && !!this.baseUrl; }
+};
+
+async function callLLM(messages, opts = {}) {
+  const url = LLM.baseUrl.replace(/\/+$/, '') + '/chat/completions';
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + LLM.key
+      },
+      body: JSON.stringify({
+        model: LLM.model,
+        messages,
+        temperature: opts.temperature ?? 0.6,
+        max_tokens: opts.maxTokens ?? 300
+      }),
+      signal: controller.signal
+    });
+    if (!res.ok) {
+      const t = await res.text().catch(()=>'');
+      throw new Error('HTTP ' + res.status + (t ? ' ' + t.slice(0,120) : ''));
+    }
+    const data = await res.json();
+    return (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '';
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+/* --- 本地兜底：正则解析中文调参 --- */
+const PARAM_MAP = {
+  solarCap:    'inSolarCap',
+  storageCap:  'inStorageCap',
+  demandScale: 'inDemandScale',
+  pricePeak:   'inPricePeak',
+  priceFlat:   'inPriceFlat',
+  priceValley: 'inPriceValley',
+  targetSave:  'inTargetSave',
+  aggressive:  'inAggressive'
+};
+
+function localParseParams(text) {
+  const out = {};
+  const rules = [
+    { key:'solarCap',    re:/光伏[^\d\-]{0,8}(\d+(?:\.\d+)?)/ },
+    { key:'storageCap',  re:/储能[^\d\-]{0,8}(\d+(?:\.\d+)?)/ },
+    { key:'demandScale', re:/(?:用电)?系数[^\d\-]{0,8}(\d+(?:\.\d+)?)/ },
+    { key:'pricePeak',   re:/峰[电]?价?[^\d\-]{0,8}(\d+(?:\.\d+)?)/ },
+    { key:'priceFlat',   re:/平[电]?价?[^\d\-]{0,8}(\d+(?:\.\d+)?)/ },
+    { key:'priceValley', re:/谷[电]?价?[^\d\-]{0,8}(\d+(?:\.\d+)?)/ },
+    { key:'targetSave',  re:/目标[^\d\-]{0,8}(\d+(?:\.\d+)?)/ },
+    { key:'aggressive',  re:/激进[^\d\-]{0,8}(\d+(?:\.\d+)?)/ }
+  ];
+  rules.forEach(r => {
+    const m = text.match(r.re);
+    if (m) out[r.key] = parseFloat(m[1]);
+  });
+  return out;
+}
+
+function applyParams(p) {
+  const applied = [];
+  Object.entries(p).forEach(([k, v]) => {
+    const id = PARAM_MAP[k];
+    if (!id) return;
+    const el = $(id);
+    if (!el) return;
+    const min = parseFloat(el.min), max = parseFloat(el.max);
+    let val = parseFloat(v);
+    if (isNaN(val)) return;
+    if (!isNaN(min)) val = Math.max(min, val);
+    if (!isNaN(max)) val = Math.min(max, val);
+    el.value = val;
+    applied.push(`${k}=${val}`);
+  });
+  if (applied.length) updateTopBars();
+  return applied;
+}
+
+/* --- 调度上下文（供大模型参考） --- */
+function getScheduleContext() {
+  if (!scheduleData) return '尚未运行调度。';
+  const c = getConfig();
+  const topHours = [];
+  scheduleData.logs.forEach(l => {
+    if (typeof l.h === 'number' && l.type === 'ai' && l.msg.includes('峰段')) {
+      topHours.push(`${l.h}:00 峰段放电`);
+    }
+  });
+  return `当前调度结果：光伏${scheduleData.totalSolar.toFixed(1)}kWh，`
+       + `用电${scheduleData.totalDemand.toFixed(1)}kWh，`
+       + `购电${scheduleData.totalBuy.toFixed(1)}kWh，`
+       + `节省${scheduleData.save.toFixed(1)}元，`
+       + `减碳${scheduleData.carbon.toFixed(1)}kg。`
+       + `配置：光伏${c.solarCap}kW/储能${c.storageCap}kWh/目标${c.targetSave}元。`
+       + (topHours.length ? `关键调度时段：${topHours.join('，')}。` : '');
+}
+
+/* --- 对话 UI --- */
+function addChatMessage(role, text) {
+  const chat = $('aiChat');
+  const div = document.createElement('div');
+  div.className = 'msg-' + role;
+  div.textContent = text;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+/* --- 主入口：处理一句用户输入 --- */
+async function handleAiInput(text) {
+  text = (text || '').trim();
+  if (!text) return;
+  addChatMessage('u', text);
+  $('inAiPrompt').value = '';
+  $('btnAsk').disabled = true;
+
+  try {
+    // 优先走大模型
+    if (LLM.enabled()) {
+      addChatMessage('s', '…AI 思考中');
+      const sys = `你是"校园绿色电力小脑"的AI助手，服务中小学生。
+当前可调参数（键名/含义/范围）：
+- solarCap 光伏装机 1-200 kW
+- storageCap 储能容量 5-500 kWh
+- demandScale 校园用电系数 0.3-3
+- pricePeak 峰电价 0.1-3 元/kWh
+- priceFlat 平电价 0.1-3
+- priceValley 谷电价 0.1-3
+- targetSave 目标节省电费 0-999 元
+- aggressive 调度激进度 0.5-2
+
+当前参数：${JSON.stringify(getConfig())}
+调度上下文：${getScheduleContext()}
+
+用户输入：${text}
+
+判断用户意图：
+A) 若用户在"调整参数"，请严格只输出一行 JSON：{"__action":"setParams","params":{...只含需修改的键...}}
+B) 若用户在"提问/闲聊"，请用不超过 80 字、小学生能听懂的话回答，结合校园能源调度知识。
+
+只输出 A 或 B 之一，不要同时输出，不要加代码块标记。`;
+
+      let reply = '';
+      try {
+        reply = await callLLM([
+          { role:'system', content: sys },
+          { role:'user',   content: text }
+        ], { temperature: 0.3, maxTokens: 260 });
+      } catch (e) {
+        // 去掉"思考中"提示再给结果
+        const chat = $('aiChat');
+        if (chat.lastChild && chat.lastChild.textContent === '…AI 思考中') chat.removeChild(chat.lastChild);
+        addChatMessage('s', '⚠️ 大模型调用失败：' + e.message + '，已切换本地模式');
+        reply = '';
+      }
+
+      // 去掉"思考中"提示
+      const chat2 = $('aiChat');
+      if (chat2.lastChild && chat2.lastChild.textContent === '…AI 思考中') chat2.removeChild(chat2.lastChild);
+
+      if (reply) {
+        const m = reply.match(/\{[\s\S]*?"__action"\s*:\s*"setParams"[\s\S]*?\}/);
+        if (m) {
+          try {
+            const parsed = JSON.parse(m[0]);
+            if (parsed.params && typeof parsed.params === 'object') {
+              const applied = applyParams(parsed.params);
+              if (applied.length) {
+                addChatMessage('a', `✅ 已按你的意思调整：${applied.join('，')}。点「AI智能调度」重新计算。`);
+                return;
+              }
+            }
+          } catch (e) { /* fallthrough */ }
+        }
+        addChatMessage('a', reply.trim());
+        return;
+      }
+    }
+
+    // 本地兜底：正则解析调参
+    const local = localParseParams(text);
+    if (Object.keys(local).length) {
+      const applied = applyParams(local);
+      if (applied.length) {
+        addChatMessage('a', `✅ （本地模式）已应用：${applied.join('，')}。点「AI智能调度」重新计算。`);
+        return;
+      }
+    }
+
+    // 本地问答兜底（极简）
+    addChatMessage('a', '本地模式只能识别简单调参，例如：「光伏50，储能80，目标120」；也可问「峰段电价是多少」。若要自由问答，请在右上输入 API Key 后点「保存」。');
+  } finally {
+    $('btnAsk').disabled = false;
+  }
+}
+
+/* ================================================================
+   十、主流程
    ================================================================ */
 let running = false;
 let scheduleData = null;
@@ -1092,11 +1452,11 @@ function runSimulation() {
   scheduleData = d;
   currentHour = 0;
 
-  logToEruda('═══════════════════════════════', 'log');
-  logToEruda('🤖 AI 调度引擎启动', 'log');
-  logToEruda('参数：光伏 ' + cfg.solarCap + 'kW ｜ 储能 ' + cfg.storageCap + 'kWh ｜ 目标 ' + cfg.targetSave + '元', 'log');
-  if (d.attempts > 0) logToEruda('🔄 迭代优化 ' + d.attempts + ' 次', 'log');
-  logToEruda('═══════════════════════════════', 'log');
+  logToEruda('═══════════════════════════════');
+  logToEruda('🤖 AI 调度引擎启动');
+  logToEruda(`参数：光伏 ${cfg.solarCap}kW ｜ 储能 ${cfg.storageCap}kWh ｜ 目标 ${cfg.targetSave}元`);
+  if (d.attempts > 0) logToEruda(`🔄 迭代优化 ${d.attempts} 次`);
+  logToEruda('═══════════════════════════════');
 
   let step = 0;
   const timer = setInterval(() => {
@@ -1107,7 +1467,7 @@ function runSimulation() {
       running = false;
       $('btnRun').disabled = false;
       $('btnReset').disabled = false;
-      logToEruda('✅ 调度完成：节省 ' + d.save.toFixed(1) + ' 元，减碳 ' + d.carbon.toFixed(1) + ' kg', 'log');
+      logToEruda(`✅ 调度完成：节省 ${d.save.toFixed(1)} 元，减碳 ${d.carbon.toFixed(1)} kg`);
       return;
     }
 
@@ -1144,15 +1504,28 @@ function resetSimulation() {
   currentHour = 0;
   drawEmptyChart();
   if (window.eruda) { try { console.clear(); } catch(e){} }
-  logToEruda('[系统] 已重置', 'log');
+  logToEruda('[系统] 已重置');
   $('targetBar').style.display = 'none';
   resetStatCards();
 }
 
 /* ================================================================
-   十、初始化
+   十一、初始化
    ================================================================ */
+function updateAiStatus(text, cls) {
+  const el = $('aiStatus');
+  el.textContent = text;
+  el.className = 'ai-status' + (cls ? ' ' + cls : '');
+}
+
 function initAll() {
+  LLM.load();
+  if (LLM.enabled()) {
+    updateAiStatus(`已接入 ${LLM.model} · 支持自由问答与调参`, 'on');
+  } else {
+    updateAiStatus('本地模式 · 支持简单中文调参', '');
+  }
+
   updateTopBars();
   resizeBackground();
   resizeChart();
@@ -1167,6 +1540,43 @@ document.querySelectorAll('input[type="number"]').forEach(inp => {
 
 $('btnRun').addEventListener('click', runSimulation);
 $('btnReset').addEventListener('click', resetSimulation);
+
+/* AI 卡交互 */
+$('btnSaveKey').addEventListener('click', () => {
+  LLM.save();
+  if (LLM.enabled()) {
+    updateAiStatus(`已接入 ${LLM.model} · 支持自由问答与调参`, 'on');
+    addChatMessage('s', '已保存 API 配置，可以开始自由问答了。');
+  } else {
+    updateAiStatus('本地模式 · 支持简单中文调参', '');
+    addChatMessage('s', '未填写 API Key，保持本地模式。');
+  }
+});
+
+$('btnTestKey').addEventListener('click', async () => {
+  LLM.save();
+  if (!LLM.enabled()) {
+    updateAiStatus('请先填写 API Key', 'err');
+    return;
+  }
+  updateAiStatus('测试中…', '');
+  $('btnTestKey').disabled = true;
+  try {
+    const out = await callLLM([
+      { role:'user', content: '回复两个字：可以' }
+    ], { temperature: 0, maxTokens: 10 });
+    updateAiStatus(`✅ 连接成功 · ${LLM.model} · ${(out||'').trim().slice(0,20)}`, 'on');
+  } catch (e) {
+    updateAiStatus('❌ 连接失败：' + e.message, 'err');
+  } finally {
+    $('btnTestKey').disabled = false;
+  }
+});
+
+$('btnAsk').addEventListener('click', () => handleAiInput($('inAiPrompt').value));
+$('inAiPrompt').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); handleAiInput($('inAiPrompt').value); }
+});
 
 window.addEventListener('resize', () => {
   resizeBackground();
